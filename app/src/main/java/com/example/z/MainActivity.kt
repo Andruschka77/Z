@@ -1,31 +1,58 @@
 package com.example.z
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.example.z.ui.theme.ZTheme
-import ru.sulgik.mapkit.MapKit
-import ru.sulgik.mapkit.compose.YandexMap
-import ru.sulgik.mapkit.compose.bindToLifecycleOwner
-import ru.sulgik.mapkit.compose.rememberAndInitializeMapKit
-import ru.sulgik.mapkit.compose.rememberCameraPositionState
-import ru.sulgik.mapkit.geometry.Point
-import ru.sulgik.mapkit.map.CameraPosition
+import androidx.core.app.ActivityCompat
+import com.yandex.mapkit.MapKitFactory
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var locationHelper: LocationHelper
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        MapKitFactory.initialize(this)
+
+        locationHelper = LocationHelper(this)
+
         setContent {
-            ZTheme {
-                initMapKit()
-                MapScreen()
-            }
+            MapScreen(
+                locationHelper = locationHelper
+            )
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1
+            )
+        } else {
+            locationHelper.requestLocation()
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        MapKitFactory.getInstance().onStart()
+    }
+
+    override fun onStop() {
+        MapKitFactory.getInstance().onStop()
+        super.onStop()
+    }
 }
+
+
+
+
+
 

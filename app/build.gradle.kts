@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.play.services.maps)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -59,8 +60,13 @@ dependencies {
 
     kotlin {
         sourceSets {
-            implementation("ru.sulgik.mapkit:yandex-mapkit-kmp:0.1.0")
-            implementation("ru.sulgik.mapkit:yandex-mapkit-kmp-compose:0.1.0")
+            implementation("com.google.android.gms:play-services-location:21.0.1")
+            implementation("androidx.activity:activity-compose:1.7.0")
+            implementation("androidx.compose.ui:ui:1.4.0")
+            implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+            implementation("com.yandex.android:maps.mobile:4.3.1-full")
+            implementation("androidx.activity:activity-ktx:1.7.0")
+            implementation("androidx.fragment:fragment-ktx:1.5.7")
         }
     }
 }
