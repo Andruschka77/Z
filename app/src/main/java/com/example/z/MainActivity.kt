@@ -16,16 +16,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         MapKitFactory.initialize(this)
-
-        locationHelper = LocationHelper(this)
+        locationHelper = LocationHelper(this) // Инициализация LocationHelper с передачей контекста
 
         setContent {
-            MapScreen(
-                locationHelper = locationHelper
-            )
+            MapScreen(locationHelper = locationHelper)
         }
 
-        if (ActivityCompat.checkSelfPermission(
+        if (ActivityCompat.checkSelfPermission( // Запрос разрешений на доступ к местоположению
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
@@ -35,7 +32,7 @@ class MainActivity : ComponentActivity() {
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 1
             )
-        } else {
+        } else { // Если разрешения уже предоставлены, запросим местоположение
             locationHelper.requestLocation()
         }
     }

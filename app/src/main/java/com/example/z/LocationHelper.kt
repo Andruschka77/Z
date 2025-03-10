@@ -29,6 +29,7 @@ class LocationHelper(private val context: Context) {
             return
         }
 
+        // Запрос последнего известного местоположения
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             _locationFlow.value = location
         }
