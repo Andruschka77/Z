@@ -58,15 +58,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    kotlin {
-        sourceSets {
-            implementation("com.google.android.gms:play-services-location:21.0.1")
-            implementation("androidx.activity:activity-compose:1.7.0")
-            implementation("androidx.compose.ui:ui:1.4.0")
-            implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
-            implementation("com.yandex.android:maps.mobile:4.3.1-full")
-            implementation("androidx.activity:activity-ktx:1.7.0")
-            implementation("androidx.fragment:fragment-ktx:1.5.7")
-        }
-    }
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.activity.compose.v170)
+    implementation(libs.ui)
+    implementation(libs.androidx.lifecycle.runtime.ktx.v287)
+    implementation(libs.maps.mobile)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.play.services.location.v2101)
 }
