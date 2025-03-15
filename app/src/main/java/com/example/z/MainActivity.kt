@@ -14,7 +14,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        MapKitFactory.initialize(this)
         setContent {
             AppNavigation()
         }
@@ -71,7 +70,8 @@ fun AppNavigation() {
 
         composable("settings") {
             SettingsScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                viewModel = mapViewModel
             )
         }
     }
