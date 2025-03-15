@@ -44,6 +44,8 @@ fun YandexMapView(
         modifier = modifier
     )
     DisposableEffect(Unit) {
+        onMapViewReady(mapView)
+        mapView.onStart()
         onDispose {
             mapView.onStop()
         }
@@ -102,7 +104,6 @@ fun YandexMapWithLocationMarker(
                 )
             }
         } else {
-            // Разрешение не предоставлено
             println("Разрешение на доступ к местоположению не предоставлено")
         }
     }
@@ -133,7 +134,7 @@ fun YandexMapWithLocationMarker(
         }
     }
 
-    // Устанавливаем стиль карты при изменении isSatelliteMode
+    // Устанавливаем стиль карты
     LaunchedEffect(isSatelliteMode.value) {
         map?.let {
             it.mapType = if (isSatelliteMode.value) MapType.SATELLITE else MapType.MAP
@@ -148,7 +149,7 @@ fun YandexMapWithLocationMarker(
                 currentLocation?.let { point ->
                     addPlacemark(point, mapView.map)
                 }
-                mapView.map.mapType = if (isSatelliteMode.value) MapType.SATELLITE else MapType.MAP
+                //mapView.map.mapType = if (isSatelliteMode.value) MapType.SATELLITE else MapType.MAP
             }
         )
 
