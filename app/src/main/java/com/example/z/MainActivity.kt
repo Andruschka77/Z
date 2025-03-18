@@ -71,7 +71,6 @@ fun AppNavigation() {
         composable("settings") {
             SettingsScreen(
                 onBackClick = { navController.popBackStack() },
-                viewModel = mapViewModel
             )
         }
     }

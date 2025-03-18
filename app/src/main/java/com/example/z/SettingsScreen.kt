@@ -19,9 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    viewModel: MapViewModel = viewModel()
 ) {
-    var selectedStyle by remember { mutableStateOf(viewModel.isSatelliteMode.value) }
 
     Scaffold(
         bottomBar = {
@@ -42,73 +40,10 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Text(
-                text = "Стиль карты:",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(8.dp)
-                        .clickable {
-                            selectedStyle = false
-                            viewModel.updateMapStyle(false)
-                        }
-                        .background(
-                            color = if (!selectedStyle) Color.LightGray else Color.Transparent,
-                            shape = MaterialTheme.shapes.medium
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color.Gray,
-                            shape = MaterialTheme.shapes.medium
-                        )
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Обычная карта",
-                        color = if (!selectedStyle) Color.Black else Color.Gray
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(8.dp)
-                        .clickable {
-                            selectedStyle = true
-                            viewModel.updateMapStyle(true)
-                        }
-                        .background(
-                            color = if (selectedStyle) Color.LightGray else Color.Transparent,
-                            shape = MaterialTheme.shapes.medium
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color.Gray,
-                            shape = MaterialTheme.shapes.medium
-                        )
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Спутниковая карта",
-                        color = if (selectedStyle) Color.Black else Color.Gray
-                    )
-                }
-            }
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ){
+             Text("Здесь будут настройки")
         }
     }
 }

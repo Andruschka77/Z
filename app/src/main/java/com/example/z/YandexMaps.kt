@@ -26,8 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.yandex.mapkit.map.MapType
-import com.yandex.runtime.image.ImageProvider
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 
 @Composable
 fun YandexMapView(
@@ -66,7 +66,6 @@ fun YandexMapWithLocationMarker(
     val coroutineScope = rememberCoroutineScope()
     val locationHelper = remember { LocationHelper(context) }
     val currentLocation = viewModel.currentLocation
-    val isSatelliteMode = viewModel.isSatelliteMode.collectAsState()
 
     // Функция для добавления метки на карту
     fun addPlacemark(point: Point, map: Map) {
@@ -85,26 +84,19 @@ fun YandexMapWithLocationMarker(
         )
     }
 
+    // Добавляем метку при изменении currentLocation
+    LaunchedEffect(currentLocation) {
+        if (currentLocation != null && map != null) {
+            addPlacemark(currentLocation, map!!)
+        }
+    }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // Разрешение предоставлено, запрашиваем местоположение
-            coroutineScope.launch {
-                locationHelper.getCurrentLocation(
-                    onLocationReceived = { point ->
-                        point?.let {
-                            viewModel.updateLocation(it)
-                            map?.let { map ->
-                                addPlacemark(it, map)
-                            }
-                        }
-                    },
-                    requestPermissionLauncher = null // Разрешение уже предоставлено
-                )
-            }
-        } else {
-            println("Разрешение на доступ к местоположению не предоставлено")
+            // Разрешение предоставлено, начинаем обновление местоположения
+            startLocationUpdates(locationHelper, viewModel, map, ::addPlacemark)
         }
     }
 
@@ -117,30 +109,21 @@ fun YandexMapWithLocationMarker(
             // Запрашиваем разрешение
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
-            // Разрешение уже предоставлено, запрашиваем местоположение
-            coroutineScope.launch {
-                locationHelper.getCurrentLocation(
-                    onLocationReceived = { point ->
-                        point?.let {
-                            viewModel.updateLocation(it)
-                            map?.let { map ->
-                                addPlacemark(it, map)
-                            }
-                        }
-                    },
-                    requestPermissionLauncher = null // Разрешение уже предоставлено
-                )
+            // Разрешение уже предоставлено, начинаем обновление местоположения
+            startLocationUpdates(locationHelper, viewModel, map,::addPlacemark)
+
+
+            locationHelper.getLastKnownLocation { point ->
+                point?.let {
+                    viewModel.updateLocation(it)
+                    map?.let { map ->
+                        addPlacemark(it, map)
+                    }
+                }
             }
         }
     }
 
-    // Устанавливаем стиль карты
-    LaunchedEffect(isSatelliteMode.value) {
-        map?.let {
-            it.mapType = if (isSatelliteMode.value) MapType.SATELLITE else MapType.MAP
-        }
-    }
-    
     Box(modifier = Modifier.fillMaxSize()) {
         YandexMapView(
             modifier = Modifier.fillMaxSize(),
@@ -149,7 +132,6 @@ fun YandexMapWithLocationMarker(
                 currentLocation?.let { point ->
                     addPlacemark(point, mapView.map)
                 }
-                //mapView.map.mapType = if (isSatelliteMode.value) MapType.SATELLITE else MapType.MAP
             }
         )
 
@@ -180,4 +162,30 @@ fun YandexMapWithLocationMarker(
             }
         }
     }
+}
+
+fun startLocationUpdates(
+    locationHelper: LocationHelper,
+    viewModel: MapViewModel,
+    map: Map?,
+    addPlacemark: (Point, Map) -> Unit
+) {
+    val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            locationResult.lastLocation?.let { location ->
+                val point = Point(location.latitude, location.longitude)
+                viewModel.updateLocation(point)
+                map?.let { map ->
+                    addPlacemark(point, map)
+                }
+            }
+        }
+    }
+
+    // Устанавливаем минимальные интервалы обновления
+    locationHelper.startLocationUpdates(
+        locationCallback = locationCallback,
+        interval = 1000L, // Обновление каждую секунду
+        fastestInterval = 500L // Минимальный интервал 500 мс
+    )
 }
