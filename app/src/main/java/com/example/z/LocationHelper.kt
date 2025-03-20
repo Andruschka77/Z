@@ -1,27 +1,27 @@
 package com.example.z
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.Manifest
+import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.yandex.mapkit.geometry.Point
 
 class LocationHelper(private val context: Context) {
+
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
     // Функция для начала обновления местоположения
     fun startLocationUpdates(
-        onLocationReceived: (Point) -> Unit,
-        onPermissionDenied: () -> Unit,
-        interval: Long = 1000L, // Интервал обновления (1 секунда)
-        fastestInterval: Long = 500L // Минимальный интервал (500 мс)
+        locationCallback: LocationCallback,
+        interval: Long = 5000L,
+        fastestInterval: Long = 2000L,
+        requestPermissionLauncher: (() -> Unit)? = null
     ) {
         if (ActivityCompat.checkSelfPermission(
                 context,
@@ -29,7 +29,7 @@ class LocationHelper(private val context: Context) {
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             // Запрашиваем разрешение, если оно не предоставлено
-            onPermissionDenied()
+            requestPermissionLauncher?.invoke()
             return
         }
 
@@ -40,15 +40,6 @@ class LocationHelper(private val context: Context) {
         ).apply {
             setMinUpdateIntervalMillis(fastestInterval)
         }.build()
-
-        // Создаем LocationCallback
-        val locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult.lastLocation?.let { location ->
-                    onLocationReceived(Point(location.latitude, location.longitude))
-                }
-            }
-        }
 
         // Запрашиваем обновления местоположения
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)

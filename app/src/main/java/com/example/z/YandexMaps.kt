@@ -17,7 +17,6 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import kotlinx.coroutines.launch
 import android.Manifest
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.yandex.mapkit.map.MapType
-import com.yandex.runtime.image.ImageProvider
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 
 @Composable
 fun YandexMapView(
@@ -37,6 +36,9 @@ fun YandexMapView(
 ) {
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
+    LaunchedEffect(Unit) {
+        onMapViewReady(mapView)
+    }
     AndroidView(
         factory = { mapView },
         modifier = modifier
@@ -61,40 +63,31 @@ fun YandexMapWithLocationMarker(
     val context = LocalContext.current
     var map by remember { mutableStateOf<Map?>(null) }
     var placemark by remember { mutableStateOf<PlacemarkMapObject?>(null) }
+    val coroutineScope = rememberCoroutineScope()
     val locationHelper = remember { LocationHelper(context) }
-    val currentLocation by viewModel.currentLocation.collectAsState()
+    val currentLocation = viewModel.currentLocation
 
     // Функция для добавления метки на карту
     fun addPlacemark(point: Point, map: Map) {
-        try {
-            val mapObjects: MapObjectCollection = map.mapObjects
-            placemark?.let { mapObjects.remove(it) } // Удаляем старую метку, если она есть
-            placemark = mapObjects.addPlacemark(point) // Добавляем новую метку
-        } catch (e: RuntimeException) {
-            Log.e("MapError", "Failed to add placemark: ${e.message}")
-        }
-    }
+        val mapObjects: MapObjectCollection = map.mapObjects
+        placemark?.let { mapObjects.remove(it) }
+        placemark = mapObjects.addPlacemark(point)
 
-    // Функция для перемещения камеры к точке
-    fun moveCameraToLocation(point: Point, map: Map) {
-        try {
-            map.move(
-                com.yandex.mapkit.map.CameraPosition(
-                    point,
-                    15.0f, // Уровень приближения
-                    0.0f,  // Азимут
-                    0.0f   // Наклон
-                )
+        // Перемещаем камеру к метке
+        map.move(
+            com.yandex.mapkit.map.CameraPosition(
+                point,
+                15.0f,
+                0.0f,
+                0.0f
             )
-        } catch (e: RuntimeException) {
-            Log.e("MapError", "Failed to move camera: ${e.message}")
-        }
+        )
     }
 
-    // Перемещаем камеру при изменении currentLocation
+    // Добавляем метку при изменении currentLocation
     LaunchedEffect(currentLocation) {
         if (currentLocation != null && map != null) {
-            addPlacemark(currentLocation!!, map!!)
+            addPlacemark(currentLocation, map!!)
         }
     }
 
@@ -103,17 +96,7 @@ fun YandexMapWithLocationMarker(
     ) { isGranted ->
         if (isGranted) {
             // Разрешение предоставлено, начинаем обновление местоположения
-            locationHelper.startLocationUpdates(
-                onLocationReceived = { point ->
-                    viewModel.updateLocation(point)
-                    map?.let { map ->
-                        addPlacemark(point, map)
-                    }
-                },
-                onPermissionDenied = {
-                    println("Разрешение на доступ к местоположению не предоставлено")
-                }
-            )
+            startLocationUpdates(locationHelper, viewModel, map, ::addPlacemark)
         }
     }
 
@@ -127,19 +110,9 @@ fun YandexMapWithLocationMarker(
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
             // Разрешение уже предоставлено, начинаем обновление местоположения
-            locationHelper.startLocationUpdates(
-                onLocationReceived = { point ->
-                    viewModel.updateLocation(point)
-                    map?.let { map ->
-                        addPlacemark(point, map)
-                    }
-                },
-                onPermissionDenied = {
-                    println("Разрешение на доступ к местоположению не предоставлено")
-                }
-            )
+            startLocationUpdates(locationHelper, viewModel, map,::addPlacemark)
 
-            // Используем последнее известное местоположение, если оно доступно
+
             locationHelper.getLastKnownLocation { point ->
                 point?.let {
                     viewModel.updateLocation(it)
@@ -158,27 +131,9 @@ fun YandexMapWithLocationMarker(
                 map = mapView.map
                 currentLocation?.let { point ->
                     addPlacemark(point, mapView.map)
-                    moveCameraToLocation(currentLocation!!, map!!)
                 }
             }
         )
-
-
-        // Кнопка для перемещения к местоположению
-        Button(
-            onClick = {
-                currentLocation?.let { point ->
-                    map?.let { map ->
-                        moveCameraToLocation(point, map)
-                    }
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
-        ) {
-            Text("М")
-        }
 
         Column(
             modifier = Modifier
@@ -207,4 +162,30 @@ fun YandexMapWithLocationMarker(
             }
         }
     }
+}
+
+fun startLocationUpdates(
+    locationHelper: LocationHelper,
+    viewModel: MapViewModel,
+    map: Map?,
+    addPlacemark: (Point, Map) -> Unit
+) {
+    val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            locationResult.lastLocation?.let { location ->
+                val point = Point(location.latitude, location.longitude)
+                viewModel.updateLocation(point)
+                map?.let { map ->
+                    addPlacemark(point, map)
+                }
+            }
+        }
+    }
+
+    // Устанавливаем минимальные интервалы обновления
+    locationHelper.startLocationUpdates(
+        locationCallback = locationCallback,
+        interval = 1000L, // Обновление каждую секунду
+        fastestInterval = 500L // Минимальный интервал 500 мс
+    )
 }

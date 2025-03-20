@@ -19,8 +19,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    viewModel: MapViewModel = viewModel()
 ) {
+
     Scaffold(
         bottomBar = {
             Box(
@@ -42,8 +42,8 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Здесь будут настройки")
+        ){
+             Text("Здесь будут настройки")
         }
     }
 }
