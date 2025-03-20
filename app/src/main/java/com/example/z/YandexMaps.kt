@@ -17,6 +17,7 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import kotlinx.coroutines.launch
 import android.Manifest
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,9 +37,6 @@ fun YandexMapView(
 ) {
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
-    LaunchedEffect(Unit) {
-        onMapViewReady(mapView)
-    }
     AndroidView(
         factory = { mapView },
         modifier = modifier
@@ -63,48 +61,59 @@ fun YandexMapWithLocationMarker(
     val context = LocalContext.current
     var map by remember { mutableStateOf<Map?>(null) }
     var placemark by remember { mutableStateOf<PlacemarkMapObject?>(null) }
-    val coroutineScope = rememberCoroutineScope()
     val locationHelper = remember { LocationHelper(context) }
-    val currentLocation = viewModel.currentLocation
-    val isSatelliteMode = viewModel.isSatelliteMode.collectAsState()
+    val currentLocation by viewModel.currentLocation.collectAsState()
 
     // Функция для добавления метки на карту
     fun addPlacemark(point: Point, map: Map) {
-        val mapObjects: MapObjectCollection = map.mapObjects
-        placemark?.let { mapObjects.remove(it) }
-        placemark = mapObjects.addPlacemark(point)
+        try {
+            val mapObjects: MapObjectCollection = map.mapObjects
+            placemark?.let { mapObjects.remove(it) } // Удаляем старую метку, если она есть
+            placemark = mapObjects.addPlacemark(point) // Добавляем новую метку
+        } catch (e: RuntimeException) {
+            Log.e("MapError", "Failed to add placemark: ${e.message}")
+        }
+    }
 
-        // Перемещаем камеру к метке
-        map.move(
-            com.yandex.mapkit.map.CameraPosition(
-                point,
-                15.0f,
-                0.0f,
-                0.0f
+    // Функция для перемещения камеры к точке
+    fun moveCameraToLocation(point: Point, map: Map) {
+        try {
+            map.move(
+                com.yandex.mapkit.map.CameraPosition(
+                    point,
+                    15.0f, // Уровень приближения
+                    0.0f,  // Азимут
+                    0.0f   // Наклон
+                )
             )
-        )
+        } catch (e: RuntimeException) {
+            Log.e("MapError", "Failed to move camera: ${e.message}")
+        }
+    }
+
+    // Перемещаем камеру при изменении currentLocation
+    LaunchedEffect(currentLocation) {
+        if (currentLocation != null && map != null) {
+            addPlacemark(currentLocation!!, map!!)
+        }
     }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // Разрешение предоставлено, запрашиваем местоположение
-            coroutineScope.launch {
-                locationHelper.getCurrentLocation(
-                    onLocationReceived = { point ->
-                        point?.let {
-                            viewModel.updateLocation(it)
-                            map?.let { map ->
-                                addPlacemark(it, map)
-                            }
-                        }
-                    },
-                    requestPermissionLauncher = null // Разрешение уже предоставлено
-                )
-            }
-        } else {
-            println("Разрешение на доступ к местоположению не предоставлено")
+            // Разрешение предоставлено, начинаем обновление местоположения
+            locationHelper.startLocationUpdates(
+                onLocationReceived = { point ->
+                    viewModel.updateLocation(point)
+                    map?.let { map ->
+                        addPlacemark(point, map)
+                    }
+                },
+                onPermissionDenied = {
+                    println("Разрешение на доступ к местоположению не предоставлено")
+                }
+            )
         }
     }
 
@@ -117,30 +126,31 @@ fun YandexMapWithLocationMarker(
             // Запрашиваем разрешение
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
-            // Разрешение уже предоставлено, запрашиваем местоположение
-            coroutineScope.launch {
-                locationHelper.getCurrentLocation(
-                    onLocationReceived = { point ->
-                        point?.let {
-                            viewModel.updateLocation(it)
-                            map?.let { map ->
-                                addPlacemark(it, map)
-                            }
-                        }
-                    },
-                    requestPermissionLauncher = null // Разрешение уже предоставлено
-                )
+            // Разрешение уже предоставлено, начинаем обновление местоположения
+            locationHelper.startLocationUpdates(
+                onLocationReceived = { point ->
+                    viewModel.updateLocation(point)
+                    map?.let { map ->
+                        addPlacemark(point, map)
+                    }
+                },
+                onPermissionDenied = {
+                    println("Разрешение на доступ к местоположению не предоставлено")
+                }
+            )
+
+            // Используем последнее известное местоположение, если оно доступно
+            locationHelper.getLastKnownLocation { point ->
+                point?.let {
+                    viewModel.updateLocation(it)
+                    map?.let { map ->
+                        addPlacemark(it, map)
+                    }
+                }
             }
         }
     }
 
-    // Устанавливаем стиль карты
-    LaunchedEffect(isSatelliteMode.value) {
-        map?.let {
-            it.mapType = if (isSatelliteMode.value) MapType.SATELLITE else MapType.MAP
-        }
-    }
-    
     Box(modifier = Modifier.fillMaxSize()) {
         YandexMapView(
             modifier = Modifier.fillMaxSize(),
@@ -148,10 +158,27 @@ fun YandexMapWithLocationMarker(
                 map = mapView.map
                 currentLocation?.let { point ->
                     addPlacemark(point, mapView.map)
+                    moveCameraToLocation(currentLocation!!, map!!)
                 }
-                //mapView.map.mapType = if (isSatelliteMode.value) MapType.SATELLITE else MapType.MAP
             }
         )
+
+
+        // Кнопка для перемещения к местоположению
+        Button(
+            onClick = {
+                currentLocation?.let { point ->
+                    map?.let { map ->
+                        moveCameraToLocation(point, map)
+                    }
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
+        ) {
+            Text("М")
+        }
 
         Column(
             modifier = Modifier
