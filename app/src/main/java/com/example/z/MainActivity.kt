@@ -70,7 +70,7 @@ fun AppNavigation() {
 
         composable("settings") {
             SettingsScreen(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
