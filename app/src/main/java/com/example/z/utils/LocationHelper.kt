@@ -1,8 +1,8 @@
-package com.example.z
+package com.example.z.utils
 
+import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.Manifest
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback

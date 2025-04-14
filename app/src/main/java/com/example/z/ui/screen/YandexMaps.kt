@@ -1,4 +1,4 @@
-package com.example.z
+package com.example.z.ui.screen
 
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,6 +30,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.z.utils.LocationHelper
+import com.example.z.viewmodel.AuthViewModel
+import com.example.z.viewmodel.MapViewModel
+import com.yandex.mapkit.map.CameraPosition
 
 @Composable
 fun YandexMapView(
@@ -57,6 +61,7 @@ fun YandexMapWithLocationMarker(
     onProfileClick: () -> Unit,
     onFriendsClick: () -> Unit,
     onMessagesClick: () -> Unit,
+    onLogoutClick: () -> Unit,
     viewModel: MapViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -81,7 +86,7 @@ fun YandexMapWithLocationMarker(
     fun moveCameraToLocation(point: Point, map: Map, zoom: Float = zoomLevel) {
         try {
             map.move(
-                com.yandex.mapkit.map.CameraPosition(
+                CameraPosition(
                     point,
                     zoom, // Уровень приближения
                     0.0f,  // Азимут
@@ -243,6 +248,11 @@ fun YandexMapWithLocationMarker(
             // Кнопка настроек
             Button(onClick = onSettingsClick) {
                 Text("Н")
+            }
+
+            // Кнопка выхода
+            Button(onClick = onLogoutClick) {
+                Text("Выход")
             }
         }
     }

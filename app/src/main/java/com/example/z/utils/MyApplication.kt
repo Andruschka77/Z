@@ -1,4 +1,4 @@
-package com.example.z
+package com.example.z.utils
 
 import android.app.Application
 import com.yandex.mapkit.MapKitFactory

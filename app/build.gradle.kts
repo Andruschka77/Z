@@ -1,4 +1,6 @@
 plugins {
+    id("org.jetbrains.kotlin.plugin.serialization")
+    id("kotlin-android")
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -67,4 +69,21 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.play.services.location.v2101)
+
+//    implementation(libs.ktor.client.core)
+////    implementation(libs.ktor.client.android)
+////    implementation(libs.ktor.client.serialization)
+////    implementation(libs.ktor.client.content.negotiation)
+////    implementation(libs.ktor.client.logging)
+////    implementation(libs.xlogback.classic)
+////    implementation(libs.kotlinx.serialization.json)
+////    implementation(libs.androidx.security.crypto)
+////    implementation(libs.ktor.client.android.v237)
+////    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("io.ktor:ktor-client-core:2.3.0")
+    implementation("io.ktor:ktor-client-android:2.3.0")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 }

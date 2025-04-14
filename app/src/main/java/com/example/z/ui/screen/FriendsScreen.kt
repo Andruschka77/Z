@@ -1,18 +1,16 @@
-package com.example.z
+package com.example.z.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SettingsScreen(
-    onBackClick: () -> Unit
-) {
+fun FriendsScreen(onBackClick: () -> Unit) {
     Scaffold(
         bottomBar = {
             Box(
@@ -35,7 +33,7 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Здесь будут настройки")
+            Text("Здесь будет список друзей")
         }
     }
 }
