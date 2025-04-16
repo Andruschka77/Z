@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.yandex.mapkit.MapKitFactory
 import androidx.navigation.compose.NavHost
@@ -69,19 +71,32 @@ fun Navigation(tokenManager: TokenManager, authViewModel: AuthViewModel) {
         composable(Routes.YANDEXMAPWITHLOCATIONMARKER) {
             YandexMapWithLocationMarker(
                 onSettingsClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
-                onProfileClick = { navController.navigate(Routes.PROFILE_SCREEN) },
+                onProfileClick = {
+                    navController.navigate(Routes.PROFILE_SCREEN)
+                },
                 onFriendsClick = { navController.navigate(Routes.FRIENDS_SCREEN) },
-                onMessagesClick = { navController.navigate(Routes.MESSAGES_SCREEN) },
-                onLogoutClick = {
-                    tokenManager.clearToken()
-                    navController.navigate(Routes.AUTH_SCREEN) {
-                        popUpTo(Routes.AUTH_SCREEN) { inclusive = true }
-                    }
-                }
+                onMessagesClick = { navController.navigate(Routes.MESSAGES_SCREEN) }
             )
         }
         composable(Routes.PROFILE_SCREEN) {
-            ProfileScreen(onBackClick = { navController.popBackStack() })
+            val authViewModel: AuthViewModel = viewModel()
+            LaunchedEffect(Unit) {
+                tokenManager.getToken()?.let { token ->
+                    authViewModel.loadProfileData(token)
+                }
+            }
+            ProfileScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onLogoutClick = {
+                    authViewModel.logout(tokenManager)
+                    navController.navigate(Routes.AUTH_SCREEN) {
+                        popUpTo(Routes.AUTH_SCREEN) { inclusive = true }
+                    }
+                },
+                profileData = authViewModel.profileData.value
+            )
         }
         composable(Routes.FRIENDS_SCREEN) {
             FriendsScreen(onBackClick = { navController.popBackStack() })

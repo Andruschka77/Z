@@ -31,7 +31,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.z.utils.LocationHelper
-import com.example.z.viewmodel.AuthViewModel
 import com.example.z.viewmodel.MapViewModel
 import com.yandex.mapkit.map.CameraPosition
 
@@ -61,7 +60,6 @@ fun YandexMapWithLocationMarker(
     onProfileClick: () -> Unit,
     onFriendsClick: () -> Unit,
     onMessagesClick: () -> Unit,
-    onLogoutClick: () -> Unit,
     viewModel: MapViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -248,11 +246,6 @@ fun YandexMapWithLocationMarker(
             // Кнопка настроек
             Button(onClick = onSettingsClick) {
                 Text("Н")
-            }
-
-            // Кнопка выхода
-            Button(onClick = onLogoutClick) {
-                Text("Выход")
             }
         }
     }
