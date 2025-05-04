@@ -5,34 +5,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
-import com.yandex.mapkit.MapKitFactory
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.z.ui.screen.AuthScreen
-import com.example.z.ui.screen.FriendsScreen
-import com.example.z.ui.screen.MessagesScreen
-import com.example.z.ui.screen.ProfileScreen
-import com.example.z.ui.screen.RegisterScreen
-import com.example.z.ui.screen.SettingsScreen
-import com.example.z.ui.screen.YandexMapWithLocationMarker
-import com.example.z.utils.Routes
+import androidx.navigation.compose.rememberNavController
+import com.example.z.ui.screen.*
+import com.example.z.ui.Routes
 import com.example.z.utils.TokenManager
 import com.example.z.viewmodel.AuthViewModel
+import com.example.z.viewmodel.FriendsViewModel
+import com.example.z.viewmodel.MapViewModel
+import com.yandex.mapkit.MapKitFactory
 
 class MainActivity : ComponentActivity() {
-    private lateinit var tokenManager: TokenManager
-    private lateinit var authViewModel: AuthViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        tokenManager = TokenManager(this)
-        authViewModel = ViewModelProvider(this)[AuthViewModel::class.java]
-        setContent {
-            Navigation(tokenManager = tokenManager, authViewModel = authViewModel)
-        }
+        MapKitFactory.initialize(this)
+        val tokenManager = TokenManager(this)
 
+        setContent {
+            ZApp(tokenManager = tokenManager)
+        }
     }
 
     override fun onStart() {
@@ -47,63 +40,97 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Navigation(tokenManager: TokenManager, authViewModel: AuthViewModel) {
+fun ZApp(tokenManager: TokenManager) {
     val navController = rememberNavController()
+    val authViewModel: AuthViewModel = viewModel()
+    val mapViewModel: MapViewModel = viewModel()
+    val friendsViewModel: FriendsViewModel = viewModel()
 
     NavHost(
         navController = navController,
-        startDestination = if (tokenManager.getToken() != null) Routes.YANDEXMAPWITHLOCATIONMARKER else Routes.AUTH_SCREEN
+        startDestination = if (tokenManager.getToken() != null) Routes.MAP_SCREEN else Routes.AUTH_SCREEN
     ) {
+        // Авторизация
         composable(Routes.AUTH_SCREEN) {
             AuthScreen(
                 onRegisterClick = { navController.navigate(Routes.REGISTER_SCREEN) },
-                onLoginSuccess = { navController.navigate(Routes.YANDEXMAPWITHLOCATIONMARKER) },
+                onLoginSuccess = { navController.navigate(Routes.MAP_SCREEN) },
                 tokenManager = tokenManager,
                 authViewModel = authViewModel
             )
         }
+
+        // Регистрация
         composable(Routes.REGISTER_SCREEN) {
             RegisterScreen(
-                onRegisterSuccess = { navController.navigate(Routes.YANDEXMAPWITHLOCATIONMARKER) },
+                onRegisterSuccess = { navController.navigate(Routes.MAP_SCREEN) },
                 onBackClick = { navController.popBackStack() }
             )
         }
-        composable(Routes.YANDEXMAPWITHLOCATIONMARKER) {
+
+        // Главный экран с картой
+        composable(Routes.MAP_SCREEN) {
             YandexMapWithLocationMarker(
+                viewModel = mapViewModel,
                 onSettingsClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
-                onProfileClick = {
-                    navController.navigate(Routes.PROFILE_SCREEN)
-                },
+                onProfileClick = { navController.navigate(Routes.PROFILE_SCREEN) },
                 onFriendsClick = { navController.navigate(Routes.FRIENDS_SCREEN) },
                 onMessagesClick = { navController.navigate(Routes.MESSAGES_SCREEN) }
             )
         }
+
+        // Профиль пользователя
         composable(Routes.PROFILE_SCREEN) {
-            val authViewModel: AuthViewModel = viewModel()
             LaunchedEffect(Unit) {
-                tokenManager.getToken()?.let { token ->
-                    authViewModel.loadProfileData(token)
-                }
+                tokenManager.getToken()?.let { authViewModel.loadProfileData(it) }
             }
+
             ProfileScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                },
+                onBackClick = { navController.popBackStack() },
                 onLogoutClick = {
                     authViewModel.logout(tokenManager)
                     navController.navigate(Routes.AUTH_SCREEN) {
-                        popUpTo(Routes.AUTH_SCREEN) { inclusive = true }
+                        popUpTo(Routes.MAP_SCREEN) { inclusive = true }
                     }
                 },
                 profileData = authViewModel.profileData.value
             )
         }
+
+        // Список друзей
         composable(Routes.FRIENDS_SCREEN) {
-            FriendsScreen(onBackClick = { navController.popBackStack() })
+            LaunchedEffect(Unit) {
+                tokenManager.getToken()?.let { friendsViewModel.loadFriends(it) }
+            }
+
+            FriendsScreen(
+                onBackClick = { navController.popBackStack() },
+                onFriendClick = { friend ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("friend", friend)
+                    navController.navigate("${Routes.FRIEND_PROFILE_SCREEN}/${friend.id}")
+                },
+                viewModel = friendsViewModel
+            )
         }
+
+        // Профиль друга
+        composable("${Routes.FRIEND_PROFILE_SCREEN}/{friendId}") { backStackEntry ->
+            val friendId = backStackEntry.arguments?.getString("friendId")
+            val friend = friendsViewModel.friends.find { it.id == friendId }
+                ?: return@composable
+
+            FriendProfileScreen(
+                friend = friend,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // Сообщения
         composable(Routes.MESSAGES_SCREEN) {
             MessagesScreen(onBackClick = { navController.popBackStack() })
         }
+
+        // Настройки
         composable(Routes.SETTINGS_SCREEN) {
             SettingsScreen(onBackClick = { navController.popBackStack() })
         }
