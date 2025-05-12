@@ -10,20 +10,3 @@ data class FriendRequest(
     val receiverId: String,      // ID получателя
     val status: String           // "PENDING", "ACCEPTED", "REJECTED"
 )
-
-@Serializable
-data class FriendResponse(
-    val success: Boolean,
-    val message: String,
-    val friends: List<Friend> = emptyList(),
-    val pendingRequests: List<FriendRequest> = emptyList()
-)
-
-@Serializable
-data class Friend(
-    val id: String,
-    val login: String,
-    val firstName: String,
-    val lastName: String,
-    val email: String
-)

@@ -17,19 +17,29 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import android.Manifest
 import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.z.R
 import com.example.z.utils.LocationHelper
 import com.example.z.viewmodel.MapViewModel
 import com.yandex.mapkit.map.CameraPosition
@@ -207,7 +217,7 @@ fun YandexMapWithLocationMarker(
         )
 
         // Кнопка для перемещения к местоположению
-        Button(
+        IconButton(
             onClick = {
                 currentLocation?.let { point ->
                     map?.let { map ->
@@ -217,35 +227,88 @@ fun YandexMapWithLocationMarker(
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
+                .padding(bottom = 16.dp) // Отступ снизу больше, чтобы не мешать кнопке "Назад"
+                .size(60.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = CircleShape
+                )
         ) {
-            Text("М")
+            Image(
+                painter = painterResource(R.drawable.location),
+                contentDescription = "Мое местоположение",
+            )
         }
 
+        // 4 кнопки навигации (справа сверху)
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Кнопка профиля
-            Button(onClick = onProfileClick) {
-                Text("П")
+            IconButton(
+                onClick = onProfileClick,
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape
+                    )
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.profile),
+                    contentDescription = "Мое местоположение",
+                )
             }
 
             // Кнопка друзей
-            Button(onClick = onFriendsClick) {
-                Text("Д")
+            IconButton(
+                onClick = onFriendsClick,
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape
+                    )
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.friends),
+                    contentDescription = "Мое местоположение",
+                )
             }
 
             // Кнопка сообщений
-            Button(onClick = onMessagesClick) {
-                Text("С")
+            IconButton(
+                onClick = onMessagesClick,
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape
+                    )
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.messages),
+                    contentDescription = "Мое местоположение",
+                )
             }
 
             // Кнопка настроек
-            Button(onClick = onSettingsClick) {
-                Text("Н")
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape
+                    )
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.settings),
+                    contentDescription = "Мое местоположение",
+                )
             }
         }
     }

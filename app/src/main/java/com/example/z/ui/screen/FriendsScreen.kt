@@ -1,5 +1,6 @@
 package com.example.z.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,9 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.z.model.requests.Friend
+import com.example.z.R
+import com.example.z.model.FriendModel
 import com.example.z.model.requests.FriendRequest
 import com.example.z.utils.TokenManager
 import com.example.z.viewmodel.FriendsViewModel
@@ -22,7 +25,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun FriendsScreen(
     onBackClick: () -> Unit,
-    onFriendClick: (Friend) -> Unit,
+    onFriendClick: (FriendModel) -> Unit,
     viewModel: FriendsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -45,8 +48,15 @@ fun FriendsScreen(
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Button(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .size(62.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.arrow),
+                        contentDescription = "Назад",
+                    )
                 }
             }
         }
@@ -176,7 +186,7 @@ fun FriendRequestItem(
 
 @Composable
 fun FriendItem(
-    friend: Friend,
+    friend: FriendModel,
     onClick: () -> Unit
 ) {
     Card(

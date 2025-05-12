@@ -1,14 +1,16 @@
 package com.example.z.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.z.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,10 +30,14 @@ fun SettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад"
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .size(52.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.arrow),
+                            contentDescription = "Назад",
                         )
                     }
                 }
@@ -45,23 +51,57 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Переключатель темы
+            Text(
+                text = "Выбор темы",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Кнопки выбора темы
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text(
-                    text = "Темная тема",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Switch(
-                    checked = isDarkTheme,
-                    onCheckedChange = onThemeChange
-                )
-            }
+                // Кнопка светлой темы
+                IconButton(
+                    onClick = { onThemeChange(false) },
+                    modifier = Modifier
+                        .size(90.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Image(
+                            painter = painterResource(R.drawable.sun),
+                            contentDescription = "Светлая тема",
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Text(
+                            text = "Светлая",
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
 
-            // Другие настройки можно добавить здесь
+                // Кнопка темной темы
+                IconButton(
+                    onClick = { onThemeChange(true) },
+                    modifier = Modifier
+                        .size(90.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Image(
+                            painter = painterResource(R.drawable.night),
+                            contentDescription = "Темная тема",
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Text(
+                            text = "Темная",
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }

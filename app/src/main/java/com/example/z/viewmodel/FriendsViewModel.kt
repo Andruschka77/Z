@@ -3,14 +3,14 @@ package com.example.z.viewmodel
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.z.model.FriendModel
 import com.example.z.network.ApiService
-import com.example.z.model.requests.Friend
 import com.example.z.model.requests.FriendRequest
 import kotlinx.coroutines.launch
 
 class FriendsViewModel : ViewModel() {
-    private val _friends = mutableStateOf<List<Friend>>(emptyList())
-    val friends: List<Friend> get() = _friends.value
+    private val _friends = mutableStateOf<List<FriendModel>>(emptyList())
+    val friends: List<FriendModel> get() = _friends.value
 
     private val _pendingRequests = mutableStateOf<List<FriendRequest>>(emptyList())
     val pendingRequests: List<FriendRequest> get() = _pendingRequests.value

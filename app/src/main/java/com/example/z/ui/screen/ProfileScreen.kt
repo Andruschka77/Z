@@ -1,5 +1,6 @@
 package com.example.z.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -12,9 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.z.R
 import com.example.z.model.requests.ProfileRequest
 
 @Composable
@@ -37,17 +40,11 @@ fun ProfileScreen(
         ) {
             Box(
                 modifier = Modifier
-                    .size(120.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = CircleShape
-                    )
-                    .clip(CircleShape)
+                    .size(150.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
+                Image(
+                    painter = painterResource(R.drawable.photo),
                     contentDescription = "Аватар",
-                    modifier = Modifier.size(64.dp).align(Alignment.Center)
                 )
             }
 
@@ -73,17 +70,17 @@ fun ProfileScreen(
                 Text("Выйти из аккаунта")
             }
         }
-
-        Button(
+        IconButton(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
+                .padding(bottom = 16.dp)
+                .size(62.dp)
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
+            Image(
+                painter = painterResource(R.drawable.arrow),
+                contentDescription = "Назад"
+            )
         }
     }
 }

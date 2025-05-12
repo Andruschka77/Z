@@ -4,7 +4,7 @@ import com.example.z.model.requests.LoginRequest
 import com.example.z.model.requests.ProfileRequest
 import com.example.z.model.requests.UserRequest
 import com.example.z.model.response.BaseResponse
-import com.example.z.model.requests.FriendResponse
+import com.example.z.model.response.FriendResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -75,20 +75,6 @@ object ApiService {
                 "request_id" to requestId,
                 "action" to if (accept) "accept" else "reject"
             ))
-        }.body()
-    }
-
-    // 4. Удаление друга
-    suspend fun removeFriend(token: String, friendId: String): BaseResponse {
-        return KtorClient.client.delete("${BASE_URL}friends/$friendId") {
-            header("Authorization", "Bearer $token")
-        }.body()
-    }
-
-    // 5. Получение профиля друга (опционально)
-    suspend fun getFriendProfile(token: String, friendId: String): BaseResponse {
-        return KtorClient.client.get("${BASE_URL}friends/$friendId/profile") {
-            header("Authorization", "Bearer $token")
         }.body()
     }
 }

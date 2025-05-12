@@ -14,11 +14,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.z.model.requests.Friend
+import com.example.z.model.FriendModel
 
 @Composable
 fun FriendProfileScreen(
-    friend: Friend,
+    friend: FriendModel,
     onBackClick: () -> Unit
 ) {
     Box(
@@ -55,7 +55,6 @@ fun FriendProfileScreen(
                 ProfileInfoItem("Имя:", friend.firstName)
                 ProfileInfoItem("Фамилия:", friend.lastName)
                 ProfileInfoItem("Логин:", friend.login)
-                ProfileInfoItem("Email:", friend.email)
             }
         }
 
