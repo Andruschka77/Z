@@ -4,8 +4,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.z.network.ApiService
-import com.example.z.ui.Friend
-import com.example.z.ui.FriendRequest
+import com.example.z.model.requests.Friend
+import com.example.z.model.requests.FriendRequest
 import kotlinx.coroutines.launch
 
 class FriendsViewModel : ViewModel() {

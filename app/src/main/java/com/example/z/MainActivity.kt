@@ -10,21 +10,32 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.z.ui.screen.*
-import com.example.z.ui.Routes
+import com.example.z.utils.Routes
 import com.example.z.utils.TokenManager
 import com.example.z.viewmodel.AuthViewModel
 import com.example.z.viewmodel.FriendsViewModel
 import com.example.z.viewmodel.MapViewModel
 import com.yandex.mapkit.MapKitFactory
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.lifecycle.ViewModel
+import com.example.z.viewmodel.ThemeViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.z.utils.ThemePreferences
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         MapKitFactory.initialize(this)
         val tokenManager = TokenManager(this)
+        val themePreferences = ThemePreferences(this) // Добавьте эту строку
 
         setContent {
-            ZApp(tokenManager = tokenManager)
+            ZApp(
+                tokenManager = tokenManager,
+                themePreferences = themePreferences // Передаем в ZApp
+            )
         }
     }
 
@@ -40,16 +51,35 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ZApp(tokenManager: TokenManager) {
+fun ZApp(
+    tokenManager: TokenManager,
+    themePreferences: ThemePreferences // Добавьте этот параметр
+) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
     val mapViewModel: MapViewModel = viewModel()
     val friendsViewModel: FriendsViewModel = viewModel()
 
-    NavHost(
-        navController = navController,
-        startDestination = if (tokenManager.getToken() != null) Routes.MAP_SCREEN else Routes.AUTH_SCREEN
-    ) {
+    val themeViewModel: ThemeViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return ThemeViewModel(themePreferences) as T
+            }
+        }
+    )
+    // Определение цветовой схемы в зависимости от темы
+    val colorScheme = if (themeViewModel.isDarkTheme) {
+        darkColorScheme()
+    } else {
+        lightColorScheme()
+    }
+
+    MaterialTheme(colorScheme = colorScheme) {
+        NavHost(
+            navController = navController,
+            startDestination = if (tokenManager.getToken() != null) Routes.MAP_SCREEN else Routes.AUTH_SCREEN
+        ) {
         // Авторизация
         composable(Routes.AUTH_SCREEN) {
             AuthScreen(
@@ -131,8 +161,15 @@ fun ZApp(tokenManager: TokenManager) {
         }
 
         // Настройки
-        composable(Routes.SETTINGS_SCREEN) {
-            SettingsScreen(onBackClick = { navController.popBackStack() })
+            composable(Routes.SETTINGS_SCREEN) {
+                SettingsScreen(
+                    onBackClick = { navController.popBackStack() },
+                    isDarkTheme = themeViewModel.isDarkTheme,
+                    onThemeChange = { isDark ->
+                        themeViewModel.toggleTheme(isDark)
+                    }
+                )
+            }
         }
     }
 }

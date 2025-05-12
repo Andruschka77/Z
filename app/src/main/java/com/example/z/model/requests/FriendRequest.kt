@@ -1,4 +1,4 @@
-package com.example.z.ui
+package com.example.z.model.requests
 
 import kotlinx.serialization.Serializable
 

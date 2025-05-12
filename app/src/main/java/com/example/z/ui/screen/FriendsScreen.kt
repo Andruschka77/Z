@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.z.ui.Friend
-import com.example.z.ui.FriendRequest
+import com.example.z.model.requests.Friend
+import com.example.z.model.requests.FriendRequest
 import com.example.z.utils.TokenManager
 import com.example.z.viewmodel.FriendsViewModel
 import kotlinx.coroutines.delay

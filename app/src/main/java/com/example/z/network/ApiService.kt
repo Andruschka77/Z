@@ -4,7 +4,7 @@ import com.example.z.model.requests.LoginRequest
 import com.example.z.model.requests.ProfileRequest
 import com.example.z.model.requests.UserRequest
 import com.example.z.model.response.BaseResponse
-import com.example.z.ui.FriendResponse
+import com.example.z.model.requests.FriendResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get

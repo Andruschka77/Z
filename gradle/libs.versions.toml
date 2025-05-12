@@ -27,6 +27,7 @@ playServicesMaps = "19.1.0"
 securityCrypto = "1.1.0-alpha06"
 ui = "1.7.8"
 xlogbackClassic = "1.4.14"
+appcompat = "1.7.0"
 
 [libraries]
 androidx-activity-compose-v170 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -63,6 +64,7 @@ play-services-location-v2101 = { module = "com.google.android.gms:play-services-
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 xlogback-classic = { module = "ch.qos. logback: logback-classic", version.ref = "xlogbackClassic" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
