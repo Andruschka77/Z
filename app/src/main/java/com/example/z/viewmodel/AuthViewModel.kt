@@ -9,7 +9,9 @@ import com.example.z.model.requests.UserRequest
 import com.example.z.model.response.BaseResponse
 import com.example.z.utils.TokenManager
 import androidx.compose.runtime.State
+import androidx.lifecycle.viewModelScope
 import com.example.z.network.ApiService
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 class AuthViewModel : ViewModel() {

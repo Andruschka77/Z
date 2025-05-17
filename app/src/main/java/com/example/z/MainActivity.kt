@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ZApp(
     tokenManager: TokenManager,
-    themePreferences: ThemePreferences // Добавьте этот параметр
+    themePreferences: ThemePreferences
 ) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
@@ -104,8 +104,7 @@ fun ZApp(
                 viewModel = mapViewModel,
                 onSettingsClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
                 onProfileClick = { navController.navigate(Routes.PROFILE_SCREEN) },
-                onFriendsClick = { navController.navigate(Routes.FRIENDS_SCREEN) },
-                onMessagesClick = { navController.navigate(Routes.MESSAGES_SCREEN) }
+                onFriendsClick = { navController.navigate(Routes.FRIENDS_SCREEN) }
             )
         }
 
@@ -155,16 +154,10 @@ fun ZApp(
             )
         }
 
-        // Сообщения
-        composable(Routes.MESSAGES_SCREEN) {
-            MessagesScreen(onBackClick = { navController.popBackStack() })
-        }
-
         // Настройки
             composable(Routes.SETTINGS_SCREEN) {
                 SettingsScreen(
                     onBackClick = { navController.popBackStack() },
-                    isDarkTheme = themeViewModel.isDarkTheme,
                     onThemeChange = { isDark ->
                         themeViewModel.toggleTheme(isDark)
                     }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.core.app.ActivityCompat
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.Map
-import com.yandex.mapkit.map.MapObjectCollection
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import android.Manifest
@@ -28,12 +27,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
@@ -43,6 +38,15 @@ import com.example.z.R
 import com.example.z.utils.LocationHelper
 import com.example.z.viewmodel.MapViewModel
 import com.yandex.mapkit.map.CameraPosition
+import android.graphics.BitmapShader
+import android.graphics.Canvas
+import android.graphics.Path
+import android.graphics.Shader
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
+import com.yandex.mapkit.map.IconStyle
+import com.yandex.runtime.image.ImageProvider
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun YandexMapView(
@@ -69,7 +73,7 @@ fun YandexMapWithLocationMarker(
     onSettingsClick: () -> Unit,
     onProfileClick: () -> Unit,
     onFriendsClick: () -> Unit,
-    onMessagesClick: () -> Unit,
+    isUser: Boolean = true,
     viewModel: MapViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -77,16 +81,81 @@ fun YandexMapWithLocationMarker(
     var placemark by remember { mutableStateOf<PlacemarkMapObject?>(null) }
     val locationHelper = remember { LocationHelper(context) }
     val currentLocation by viewModel.currentLocation.collectAsState()
-    var zoomLevel by remember { mutableStateOf(15.0f) } // Уровень масштабирования
+    var zoomLevel by remember { mutableStateOf(15.0f) }
 
     // Функция для добавления метки на карту
     fun addPlacemark(point: Point, map: Map) {
         try {
-            val mapObjects: MapObjectCollection = map.mapObjects
-            placemark?.let { mapObjects.remove(it) } // Удаляем старую метку, если она есть
-            placemark = mapObjects.addPlacemark(point) // Добавляем новую метку
-        } catch (e: RuntimeException) {
-            Log.e("MapError", "Failed to add placemark: ${e.message}")
+            placemark?.let { map.mapObjects.remove(it) }
+
+            val width = 160
+            val height = 200
+            val pointerHeight = 40
+            val circleRadius = width / 2f
+            val circleCenterX = width / 2f
+            val circleCenterY = height - pointerHeight - circleRadius
+
+            val bitmap = createBitmap(width, height)
+            val canvas = Canvas(bitmap)
+
+            val bgPaint = android.graphics.Paint().apply {
+                isAntiAlias = true
+                color = "#4285F4".toColorInt()
+            }
+
+            canvas.drawCircle(circleCenterX, circleCenterY, circleRadius, bgPaint)
+
+            Path().apply {
+                moveTo(circleCenterX - 15, height - pointerHeight.toFloat())
+                lineTo(circleCenterX, height.toFloat())
+                lineTo(circleCenterX + 15, height - pointerHeight.toFloat())
+                close()
+                canvas.drawPath(this, bgPaint)
+            }
+
+            ContextCompat.getDrawable(context, R.drawable.profile)?.let { drawable ->
+                val photoBitmap = createBitmap(width, width)
+                Canvas(photoBitmap).apply {
+                    drawable.setBounds(0, 0, width, width)
+                    drawable.draw(this)
+                }
+
+                val borderPaint = android.graphics.Paint().apply {
+                    isAntiAlias = true
+                    color = android.graphics.Color.WHITE
+                    style = android.graphics.Paint.Style.STROKE
+                    strokeWidth = 7f
+                }
+                canvas.drawCircle(circleCenterX, circleCenterY, circleRadius - 2, borderPaint)
+
+                val photoPaint = android.graphics.Paint().apply {
+                    isAntiAlias = true
+                    shader = BitmapShader(photoBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+                }
+                canvas.drawCircle(circleCenterX, circleCenterY, circleRadius - 9, photoPaint)
+            }
+
+
+            placemark = map.mapObjects.addPlacemark(
+                point,
+                ImageProvider.fromBitmap(bitmap),
+                IconStyle().apply {
+                    anchor = android.graphics.PointF(0.5f, 1f)
+                    scale = 1.1f
+                    zIndex = 100f
+                }
+            ).apply{
+                addTapListener { _, _ ->
+                    if (isUser) {
+                        onProfileClick()
+                    } else {
+                        onFriendsClick()
+                    }
+                    true
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MapError", "Failed to create placemark", e)
         }
     }
 
@@ -96,9 +165,9 @@ fun YandexMapWithLocationMarker(
             map.move(
                 CameraPosition(
                     point,
-                    zoom, // Уровень приближения
-                    0.0f,  // Азимут
-                    0.0f   // Наклон
+                    zoom,
+                    0.0f,
+                    0.0f
                 )
             )
         } catch (e: RuntimeException) {
@@ -106,7 +175,6 @@ fun YandexMapWithLocationMarker(
         }
     }
 
-    // Перемещаем камеру при изменении currentLocation
     LaunchedEffect(currentLocation) {
         if (currentLocation != null && map != null) {
             addPlacemark(currentLocation!!, map!!)
@@ -117,7 +185,6 @@ fun YandexMapWithLocationMarker(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // Разрешение предоставлено, начинаем обновление местоположения
             locationHelper.startLocationUpdates(
                 onLocationReceived = { point ->
                     viewModel.updateLocation(point)
@@ -139,10 +206,8 @@ fun YandexMapWithLocationMarker(
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // Запрашиваем разрешение
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
-            // Разрешение уже предоставлено, начинаем обновление местоположения
             locationHelper.startLocationUpdates(
                 onLocationReceived = { point ->
                     viewModel.updateLocation(point)
@@ -183,10 +248,9 @@ fun YandexMapWithLocationMarker(
         Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(48.dp) // Ширина области для жестов
+                .width(48.dp)
                 .pointerInput(Unit) {
                     detectVerticalDragGestures { change, dragAmount ->
-                        // Изменяем уровень масштабирования
                         zoomLevel = (zoomLevel - dragAmount / 100).coerceIn(5.0f, 20.0f)
                         currentLocation?.let { point ->
                             map?.let { map ->
@@ -201,11 +265,10 @@ fun YandexMapWithLocationMarker(
         Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(48.dp) // Ширина области для жестов
+                .width(48.dp)
                 .align(Alignment.TopEnd)
                 .pointerInput(Unit) {
                     detectVerticalDragGestures { change, dragAmount ->
-                        // Изменяем уровень масштабирования
                         zoomLevel = (zoomLevel - dragAmount / 100).coerceIn(5.0f, 20.0f)
                         currentLocation?.let { point ->
                             map?.let { map ->
@@ -227,7 +290,7 @@ fun YandexMapWithLocationMarker(
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp) // Отступ снизу больше, чтобы не мешать кнопке "Назад"
+                .padding(bottom = 16.dp)
                 .size(60.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primaryContainer,
@@ -240,14 +303,12 @@ fun YandexMapWithLocationMarker(
             )
         }
 
-        // 4 кнопки навигации (справа сверху)
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Кнопка профиля
             IconButton(
                 onClick = onProfileClick,
                 modifier = Modifier
@@ -263,7 +324,6 @@ fun YandexMapWithLocationMarker(
                 )
             }
 
-            // Кнопка друзей
             IconButton(
                 onClick = onFriendsClick,
                 modifier = Modifier
@@ -279,23 +339,6 @@ fun YandexMapWithLocationMarker(
                 )
             }
 
-            // Кнопка сообщений
-            IconButton(
-                onClick = onMessagesClick,
-                modifier = Modifier
-                    .size(60.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = CircleShape
-                    )
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.messages),
-                    contentDescription = "Мое местоположение",
-                )
-            }
-
-            // Кнопка настроек
             IconButton(
                 onClick = onSettingsClick,
                 modifier = Modifier

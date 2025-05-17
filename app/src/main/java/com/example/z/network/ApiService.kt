@@ -1,10 +1,10 @@
 package com.example.z.network
 
+import com.example.z.model.FriendModel
 import com.example.z.model.requests.LoginRequest
 import com.example.z.model.requests.ProfileRequest
 import com.example.z.model.requests.UserRequest
 import com.example.z.model.response.BaseResponse
-import com.example.z.model.response.FriendResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -13,6 +13,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.serialization.json.Json
 
 object ApiService {
     //private const val BASE_URL = "http://192.168.112.226:8080/api/v1/"
@@ -38,43 +39,42 @@ object ApiService {
         }.body()
     }
 
-
-    suspend fun updateProfile(token: String, profile: ProfileRequest): BaseResponse {
-        return KtorClient.client.post("${BASE_URL}update-profile") {
-            header("Authorization", "Bearer $token")
-            contentType(ContentType.Application.Json)
-            setBody(profile)
-        }.body()
-    }
-    // 1. Отправка запроса в друзья
     suspend fun sendFriendRequest(token: String, receiverLogin: String): BaseResponse {
-        return KtorClient.client.post("${BASE_URL}friends/request") {
+        return KtorClient.client.post("${BASE_URL}friends/requests") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(mapOf("receiver_login" to receiverLogin))
         }.body()
     }
 
-    // 2. Получение списка друзей и запросов
-    suspend fun getFriends(token: String): FriendResponse {
-        return KtorClient.client.get("${BASE_URL}friends") {
-            header("Authorization", "Bearer $token")
-        }.body()
+    suspend fun getFriends(token: String): BaseResponse {
+        return try {
+            KtorClient.client.get("${BASE_URL}friends") {
+                header("Authorization", "Bearer $token")
+            }.body()
+        } catch (e: Exception) {
+            BaseResponse(false, "Ошибка сети: ${e.message}")
+        }
     }
 
-    // 3. Ответ на запрос в друзья (принять/отклонить)
     suspend fun respondToFriendRequest(
         token: String,
-        requestId: String,
+        senderLogin: String,
         accept: Boolean
     ): BaseResponse {
         return KtorClient.client.post("${BASE_URL}friends/response") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(mapOf(
-                "request_id" to requestId,
+                "sender_login" to senderLogin,
                 "action" to if (accept) "accept" else "reject"
             ))
+        }.body()
+    }
+
+    suspend fun deleteFriend(token: String, friendLogin: String): BaseResponse {
+        return KtorClient.client.delete("${BASE_URL}friends/$friendLogin") {
+            header("Authorization", "Bearer $token")
         }.body()
     }
 }

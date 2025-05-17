@@ -1,16 +1,19 @@
 package com.example.z.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -21,6 +24,7 @@ import com.example.z.model.requests.FriendRequest
 import com.example.z.utils.TokenManager
 import com.example.z.viewmodel.FriendsViewModel
 import kotlinx.coroutines.delay
+import kotlin.collections.isNotEmpty
 
 @Composable
 fun FriendsScreen(
@@ -37,7 +41,12 @@ fun FriendsScreen(
 
     // Загрузка данных при первом открытии
     LaunchedEffect(Unit) {
-        token?.let { viewModel.loadFriends(it) }
+        val token = tokenManager.getToken()
+        if (token.isNullOrEmpty()) {
+            Log.e("Auth", "Токен отсутствует")
+            return@LaunchedEffect
+        }
+        viewModel.loadFriends(token)
     }
 
     Scaffold(
@@ -91,19 +100,6 @@ fun FriendsScreen(
                 Text("Добавить в друзья")
             }
 
-            // Отображение ошибок
-            viewModel.errorMessage?.let { error ->
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-                LaunchedEffect(error) {
-                    delay(3000)
-                    viewModel.clearError()
-                }
-            }
-
             // Запросы в друзья
             if (viewModel.pendingRequests.isNotEmpty()) {
                 Text(
@@ -116,30 +112,36 @@ fun FriendsScreen(
                         FriendRequestItem(
                             request = request,
                             onAccept = {
-                                token?.let { viewModel.respondToRequest(it, request.id, true) }
+                                token?.let { viewModel.respondToRequest(it, request.senderLogin, true) }
                             },
                             onReject = {
-                                token?.let { viewModel.respondToRequest(it, request.id, false) }
+                                token?.let { viewModel.respondToRequest(it, request.senderLogin, false) }
                             }
                         )
                     }
                 }
             }
 
-            // Список друзей
-            Text(
-                "Ваши друзья (${viewModel.friends.size})",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            LazyColumn {
-                items(viewModel.friends) { friend ->
-                    FriendItem(
-                        friend = friend,
-                        onClick = { onFriendClick(friend) }
-                    )
+
+            if (viewModel.friends.isEmpty() && !viewModel.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Список друзей пуст", color = Color.Gray)
+                }
+            } else {
+                LazyColumn {
+                    items(viewModel.friends) { friend ->
+                        FriendItem(
+                            friend = friend,
+                            onDelete = { token?.let { viewModel.deleteFriend(it, friend.login) } },
+                            onClick = { onFriendClick(friend) }
+                        )
+                    }
                 }
             }
+
         }
     }
 }
@@ -187,8 +189,10 @@ fun FriendRequestItem(
 @Composable
 fun FriendItem(
     friend: FriendModel,
+    onDelete: () -> Unit,
     onClick: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -199,6 +203,26 @@ fun FriendItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(
+                onClick = { showMenu = true },
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Icon(Icons.Default.MoreVert, "Действия")
+            }
+
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Удалить") },
+                    onClick = {
+                        onDelete()
+                        showMenu = false
+                    }
+                )
+            }
+
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Друг",
@@ -215,6 +239,7 @@ fun FriendItem(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
             }
         }
     }

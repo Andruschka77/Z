@@ -2,13 +2,11 @@ package com.example.z.ui.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.z.R
 
@@ -16,32 +14,27 @@ import com.example.z.R
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit
 ) {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Настройки",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .size(62.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.arrow),
+                        contentDescription = "Назад",
                     )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier
-                            .size(52.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.arrow),
-                            contentDescription = "Назад",
-                        )
-                    }
                 }
-            )
+            }
         }
     ) { paddingValues ->
         Column(
@@ -49,20 +42,21 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Выбор темы",
-                style = MaterialTheme.typography.titleMedium,
+                text = "Выбор темы:",
+                style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Кнопки выбора темы
+            Spacer(modifier = Modifier.height(16.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                // Кнопка светлой темы
                 IconButton(
                     onClick = { onThemeChange(false) },
                     modifier = Modifier
@@ -82,7 +76,6 @@ fun SettingsScreen(
                     }
                 }
 
-                // Кнопка темной темы
                 IconButton(
                     onClick = { onThemeChange(true) },
                     modifier = Modifier

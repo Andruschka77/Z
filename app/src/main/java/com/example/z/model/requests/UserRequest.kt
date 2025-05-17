@@ -9,5 +9,6 @@ data class UserRequest(
     val password: String,
     val firstName: String,
     val lastName: String,
-    val isActivate: Boolean = false
+    val isActivate: Boolean = false,
+    val coordinates: String
 )
