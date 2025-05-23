@@ -19,9 +19,11 @@ import com.yandex.mapkit.MapKitFactory
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.z.viewmodel.ThemeViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.z.model.FriendModel
 import com.example.z.utils.ThemePreferences
 
 class MainActivity : ComponentActivity() {
@@ -29,12 +31,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         MapKitFactory.initialize(this)
         val tokenManager = TokenManager(this)
-        val themePreferences = ThemePreferences(this) // Добавьте эту строку
+        val themePreferences = ThemePreferences(this)
 
         setContent {
             ZApp(
                 tokenManager = tokenManager,
-                themePreferences = themePreferences // Передаем в ZApp
+                themePreferences = themePreferences
             )
         }
     }
@@ -68,7 +70,7 @@ fun ZApp(
             }
         }
     )
-    // Определение цветовой схемы в зависимости от темы
+
     val colorScheme = if (themeViewModel.isDarkTheme) {
         darkColorScheme()
     } else {
@@ -104,7 +106,7 @@ fun ZApp(
                 viewModel = mapViewModel,
                 onSettingsClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
                 onProfileClick = { navController.navigate(Routes.PROFILE_SCREEN) },
-                onFriendsClick = { navController.navigate(Routes.FRIENDS_SCREEN) }
+                onFriendsClick = { navController.navigate(Routes.FRIENDS_SCREEN) },
             )
         }
 

@@ -29,6 +29,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.z.model.requests.UserRequest
 import com.example.z.utils.LocationHelper
+import com.example.z.utils.TokenManager
 import com.example.z.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
@@ -48,6 +49,8 @@ fun RegisterScreen(
     val context = LocalContext.current
     val locationHelper = remember { LocationHelper(context) }
     var coordinates by remember { mutableStateOf("") }
+
+    val tokenManager = TokenManager(LocalContext.current)
 
     LaunchedEffect(Unit) {
         if (ActivityCompat.checkSelfPermission(
@@ -125,11 +128,11 @@ fun RegisterScreen(
                             coordinates = coordinates
                         )
 
-                        val response = authViewModel.signUp(userRequest)
-                        if (response.success) {
+                        val response = authViewModel.signUp(userRequest, tokenManager)
+                        if (response) {
                             onRegisterSuccess()
                         } else {
-                            println("Ошибка регистрации: ${response.message}")
+                            println("Ошибка регистрации: ${response}")
                         }
                     } catch (e: Exception) {
                         println("Ошибка при регистрации: ${e.message}")

@@ -7,5 +7,6 @@ data class FriendModel(
     val id: String,
     val login: String,
     val firstName: String,
-    val lastName: String
+    val lastName: String,
+    val coordinates: String
 )

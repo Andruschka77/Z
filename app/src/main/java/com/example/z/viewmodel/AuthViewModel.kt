@@ -18,8 +18,25 @@ class AuthViewModel : ViewModel() {
     private val _profileData = mutableStateOf<ProfileRequest?>(null)
     val profileData: State<ProfileRequest?> get() = _profileData
 
-    suspend fun signUp(userRequest: UserRequest): BaseResponse =
-        ApiService.signUp(userRequest = userRequest)
+    suspend fun signUp(
+        userRequest: UserRequest,
+        tokenManager: TokenManager
+    ): Boolean {
+        val signUpResponse = ApiService.signUp(userRequest)
+        if (!signUpResponse.success) return false
+
+        val loginRequest = LoginRequest(
+            email = userRequest.email,
+            password = userRequest.password
+        )
+        val isLoggedIn = logIn(tokenManager, loginRequest)
+
+        if (isLoggedIn) {
+            tokenManager.getToken()?.let { loadProfileData(it) }
+        }
+
+        return isLoggedIn
+    }
 
     suspend fun logIn(tokenManager: TokenManager, loginRequest: LoginRequest): Boolean {
         val response = ApiService.logIn(loginRequest = loginRequest)
@@ -33,6 +50,7 @@ class AuthViewModel : ViewModel() {
     suspend fun loadProfileData(token: String) {
         try {
             val response = ApiService.getProfile(token)
+            Log.e("RES", response.toString())
             if (response.success) {
                 _profileData.value = Json.decodeFromString<ProfileRequest>(response.message)
             }

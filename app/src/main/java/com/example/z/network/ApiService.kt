@@ -1,8 +1,6 @@
 package com.example.z.network
 
-import com.example.z.model.FriendModel
 import com.example.z.model.requests.LoginRequest
-import com.example.z.model.requests.ProfileRequest
 import com.example.z.model.requests.UserRequest
 import com.example.z.model.response.BaseResponse
 import io.ktor.client.call.body
@@ -39,11 +37,13 @@ object ApiService {
         }.body()
     }
 
-    suspend fun sendFriendRequest(token: String, receiverLogin: String): BaseResponse {
+    suspend fun sendFriendRequestByEmail(token: String, email: String): BaseResponse {
         return KtorClient.client.post("${BASE_URL}friends/requests") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
-            setBody(mapOf("receiver_login" to receiverLogin))
+            setBody(
+                Json.encodeToString(mapOf("email" to email))
+            )
         }.body()
     }
 
@@ -53,7 +53,7 @@ object ApiService {
                 header("Authorization", "Bearer $token")
             }.body()
         } catch (e: Exception) {
-            BaseResponse(false, "Ошибка сети: ${e.message}")
+            BaseResponse(false, "Ошибка: ${e.message}")
         }
     }
 
@@ -65,10 +65,9 @@ object ApiService {
         return KtorClient.client.post("${BASE_URL}friends/response") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
-            setBody(mapOf(
-                "sender_login" to senderLogin,
-                "action" to if (accept) "accept" else "reject"
-            ))
+            setBody(
+                mapOf("sender_login" to senderLogin, "action" to if (accept) "accept" else "reject")
+            )
         }.body()
     }
 
@@ -76,6 +75,16 @@ object ApiService {
         return KtorClient.client.delete("${BASE_URL}friends/$friendLogin") {
             header("Authorization", "Bearer $token")
         }.body()
+    }
+
+    suspend fun getPendingRequests(token: String): BaseResponse {
+        return try {
+            KtorClient.client.get("${BASE_URL}friends/pending") {
+                header("Authorization", "Bearer $token")
+            }.body()
+        } catch (e: Exception) {
+            BaseResponse(false, "Ошибка: ${e.message}")
+        }
     }
 }
 

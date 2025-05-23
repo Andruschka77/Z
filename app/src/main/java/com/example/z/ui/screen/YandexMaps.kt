@@ -47,6 +47,7 @@ import androidx.core.graphics.createBitmap
 import com.yandex.mapkit.map.IconStyle
 import com.yandex.runtime.image.ImageProvider
 import androidx.core.graphics.toColorInt
+import com.example.z.model.FriendModel
 
 @Composable
 fun YandexMapView(
@@ -82,6 +83,8 @@ fun YandexMapWithLocationMarker(
     val locationHelper = remember { LocationHelper(context) }
     val currentLocation by viewModel.currentLocation.collectAsState()
     var zoomLevel by remember { mutableStateOf(15.0f) }
+
+    val friends by viewModel.friends.collectAsState()
 
     // Функция для добавления метки на карту
     fun addPlacemark(point: Point, map: Map) {
@@ -178,6 +181,18 @@ fun YandexMapWithLocationMarker(
     LaunchedEffect(currentLocation) {
         if (currentLocation != null && map != null) {
             addPlacemark(currentLocation!!, map!!)
+        }
+    }
+
+    LaunchedEffect(friends) {
+        friends.forEach { friend ->
+            try {
+                val (lat, lon) = friend.coordinates.split(",")
+                val point = Point(lat.toDouble(), lon.toDouble())
+                addPlacemark(point = point, map = map!!,)
+            } catch (e: Exception) {
+                Log.e("Map", "Invalid coordinates: ${friend.login}")
+            }
         }
     }
 

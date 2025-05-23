@@ -20,15 +20,13 @@ class FriendsViewModel : ViewModel() {
     private val _errorMessage = mutableStateOf<String?>(null)
 
     private val _isLoading = mutableStateOf(false)
-    val isLoading: Boolean get() = _isLoading.value
+    private var isFriendsLoading = false
 
     fun loadFriends(token: String) {
-        if (token.isBlank()) {
-            _errorMessage.value = "Токен отсутствует"
-            return
-        }
+        if (isFriendsLoading) return
         viewModelScope.launch {
             _isLoading.value = true
+            isFriendsLoading = true
             try {
                 val response = ApiService.getFriends(token)
                 if (response.success) {
@@ -38,22 +36,31 @@ class FriendsViewModel : ViewModel() {
                     _errorMessage.value = response.message
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Ошибка: ${e.message?.take(20)}..."
+                _errorMessage.value = "Ошибка: ${e.message}"
             } finally {
                 _isLoading.value = false
+                isFriendsLoading = false
             }
         }
     }
 
-    fun sendFriendRequest(token: String, receiverLogin: String) {
+    fun sendFriendRequestByEmail(token: String, email: String) {
         viewModelScope.launch {
             try {
-                ApiService.sendFriendRequest(token, receiverLogin)
+                val response = ApiService.sendFriendRequestByEmail(token, email)
+                if (!response.success) {
+                    _errorMessage.value = response.message
+                } else {
+                    loadFriends(token)
+                    loadPendingRequests(token)
+                }
             } catch (e: Exception) {
                 Log.e("Network", "Ошибка: ${e.message}")
+                _errorMessage.value = "Сетевая ошибка"
             }
         }
     }
+
     fun respondToRequest(token: String, senderLogin: String, accept: Boolean) {
         viewModelScope.launch {
             try {
@@ -62,15 +69,12 @@ class FriendsViewModel : ViewModel() {
                     _errorMessage.value = response.message
                 } else {
                     loadFriends(token)
+                    loadPendingRequests(token)
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Ошибка обработки запроса"
+                _errorMessage.value = "Ошибка обработки запроса: ${e.message}"
             }
         }
-    }
-
-    fun clearError() {
-        _errorMessage.value = null
     }
 
     fun deleteFriend(token: String, friendLogin: String) {
@@ -85,4 +89,20 @@ class FriendsViewModel : ViewModel() {
             }
         }
     }
+
+    fun loadPendingRequests(token: String) {
+        viewModelScope.launch {
+            try {
+                val response = ApiService.getPendingRequests(token)
+                if (response.success) {
+                    _pendingRequests.value = Json.decodeFromString<List<FriendRequest>>(response.message)
+                } else {
+                    _errorMessage.value = response.message
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Ошибка загрузки запросов: ${e.message}"
+            }
+        }
+    }
+
 }

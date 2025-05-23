@@ -6,26 +6,27 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.z.R
 import com.example.z.model.FriendModel
 import com.example.z.model.requests.FriendRequest
 import com.example.z.utils.TokenManager
 import com.example.z.viewmodel.FriendsViewModel
-import kotlinx.coroutines.delay
 import kotlin.collections.isNotEmpty
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendsScreen(
     onBackClick: () -> Unit,
@@ -33,20 +34,14 @@ fun FriendsScreen(
     viewModel: FriendsViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val tokenManager = remember { TokenManager(context) }
-    val token by remember { mutableStateOf(tokenManager.getToken()) }
+    val token = remember { TokenManager(context).getToken() ?: "" }
+    var emailInput by remember { mutableStateOf("") }
 
-    // Состояние для поиска
-    var searchText by remember { mutableStateOf("") }
-
-    // Загрузка данных при первом открытии
     LaunchedEffect(Unit) {
-        val token = tokenManager.getToken()
-        if (token.isNullOrEmpty()) {
-            Log.e("Auth", "Токен отсутствует")
-            return@LaunchedEffect
+        if (token.isNotBlank()) {
+            viewModel.loadFriends(token)
+            viewModel.loadPendingRequests(token)
         }
-        viewModel.loadFriends(token)
     }
 
     Scaffold(
@@ -76,68 +71,93 @@ fun FriendsScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Поиск друзей
-            TextField(
-                value = searchText,
-                onValueChange = { searchText = it },
-                label = { Text("Введите логин друга") },
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Добавить друга", fontWeight = FontWeight.Medium, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = { emailInput = it },
+                        label = { Text("По email") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            if (emailInput.isNotBlank()) {
+                                viewModel.sendFriendRequestByEmail(token, emailInput)
+                                emailInput = ""
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Отправить запрос")
+                    }
+                }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outline
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = {
-                    token?.let {
-                        if (searchText.isNotBlank()) {
-                            viewModel.sendFriendRequest(it, searchText)
-                            searchText = "" // Очищаем поле после отправки
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    if (viewModel.pendingRequests.isEmpty()) {
+                        Text("Нет запросов в друзья!", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyColumn {
+                            items(viewModel.pendingRequests) { request ->
+                                FriendRequestCard(
+                                    request = request,
+                                    onAccept = { viewModel.respondToRequest(token, request.senderLogin, true) },
+                                    onReject = { viewModel.respondToRequest(token, request.senderLogin, false) }
+                                )
+                            }
                         }
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Добавить в друзья")
-            }
+                }
 
-            // Запросы в друзья
-            if (viewModel.pendingRequests.isNotEmpty()) {
-                Text(
-                    "Запросы в друзья (${viewModel.pendingRequests.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outline
                 )
-                LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                    items(viewModel.pendingRequests) { request ->
-                        FriendRequestItem(
-                            request = request,
-                            onAccept = {
-                                token?.let { viewModel.respondToRequest(it, request.senderLogin, true) }
-                            },
-                            onReject = {
-                                token?.let { viewModel.respondToRequest(it, request.senderLogin, false) }
-                            }
-                        )
-                    }
-                }
-            }
 
-
-            if (viewModel.friends.isEmpty() && !viewModel.isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
                 ) {
-                    Text("Список друзей пуст", color = Color.Gray)
-                }
-            } else {
-                LazyColumn {
-                    items(viewModel.friends) { friend ->
-                        FriendItem(
-                            friend = friend,
-                            onDelete = { token?.let { viewModel.deleteFriend(it, friend.login) } },
-                            onClick = { onFriendClick(friend) }
-                        )
+                    if (viewModel.friends.isEmpty()) {
+                        Text("Список друзей пуст!", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyColumn {
+                            items(viewModel.friends) { friend ->
+                                FriendCard(
+                                    friend = friend,
+                                    onClick = { onFriendClick(friend) },
+                                    onDelete = { viewModel.deleteFriend(token, friend.login) }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -147,36 +167,47 @@ fun FriendsScreen(
 }
 
 @Composable
-fun FriendRequestItem(
+fun FriendRequestCard(
     request: FriendRequest,
     onAccept: () -> Unit,
     onReject: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Друг",
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
-                "${request.senderLogin} хочет добавить вас в друзья",
+                text = "${request.senderLogin} хочет добавить вас в друзья!",
                 modifier = Modifier.weight(1f)
             )
-            Row {
-                Button(
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                TextButton(
                     onClick = onAccept,
-                    modifier = Modifier.padding(end = 8.dp)
+                    modifier = Modifier.width(100.dp)
                 ) {
                     Text("Принять")
                 }
-                Button(
+                TextButton(
                     onClick = onReject,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                    modifier = Modifier.width(100.dp),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text("Отклонить")
@@ -187,59 +218,51 @@ fun FriendRequestItem(
 }
 
 @Composable
-fun FriendItem(
+fun FriendCard(
     friend: FriendModel,
-    onDelete: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
-    var showMenu by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .wrapContentHeight(),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = { showMenu = true },
-                modifier = Modifier.padding(start = 8.dp)
-            ) {
-                Icon(Icons.Default.MoreVert, "Действия")
-            }
-
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Удалить") },
-                    onClick = {
-                        onDelete()
-                        showMenu = false
-                    }
-                )
-            }
-
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Друг",
                 modifier = Modifier.size(40.dp)
             )
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "${friend.firstName} ${friend.lastName}",
+                    text = "Имя: ${friend.firstName}",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    "@${friend.login}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Фамилия: ${friend.lastName}",
+                    style = MaterialTheme.typography.titleMedium
                 )
-
+                Text(
+                    text = "Логин: ${friend.login}",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Удалить",
+                    modifier = Modifier.size(40.dp)
+                )
             }
         }
     }
