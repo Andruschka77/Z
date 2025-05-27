@@ -15,6 +15,7 @@ import com.yandex.mapkit.map.Map
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import android.Manifest
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,7 +48,13 @@ import androidx.core.graphics.createBitmap
 import com.yandex.mapkit.map.IconStyle
 import com.yandex.runtime.image.ImageProvider
 import androidx.core.graphics.toColorInt
-import com.example.z.model.FriendModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 
 @Composable
 fun YandexMapView(
@@ -83,8 +90,36 @@ fun YandexMapWithLocationMarker(
     val locationHelper = remember { LocationHelper(context) }
     val currentLocation by viewModel.currentLocation.collectAsState()
     var zoomLevel by remember { mutableStateOf(15.0f) }
-
     val friends by viewModel.friends.collectAsState()
+    var currentUserMarker by remember { mutableStateOf<PlacemarkMapObject?>(null) }
+    var animationJob by remember { mutableStateOf<Job?>(null) }
+
+    // Функция для обновления анимации
+    fun updateMarkerAnimation(context: Context, hasFriends: Boolean) {
+        animationJob?.cancel()
+
+        if (hasFriends && currentUserMarker != null) {
+            animationJob = viewModel.viewModelScope.launch {
+                var showFirstImage = true
+                while (isActive) { // Используем isActive для безопасной отмены
+                    withContext(Dispatchers.Main) {
+                        currentUserMarker?.setIcon(
+                            ImageProvider.fromResource(
+                                context,
+                                if (showFirstImage) R.drawable.profile else R.drawable.friends_ava
+                            )
+                        )
+                    }
+                    showFirstImage = !showFirstImage
+                    delay(1000)
+                }
+            }
+        } else {
+            currentUserMarker?.setIcon(
+                ImageProvider.fromResource(context, R.drawable.friends_ava)
+            )
+        }
+    }
 
     // Функция для добавления метки на карту
     fun addPlacemark(point: Point, map: Map) {
@@ -147,7 +182,8 @@ fun YandexMapWithLocationMarker(
                     scale = 1.1f
                     zIndex = 100f
                 }
-            ).apply{
+            ).apply {
+                currentUserMarker = this
                 addTapListener { _, _ ->
                     if (isUser) {
                         onProfileClick()
@@ -196,6 +232,16 @@ fun YandexMapWithLocationMarker(
         }
     }
 
+    LaunchedEffect(friends.isNotEmpty()) {
+        updateMarkerAnimation(context, friends.isNotEmpty())
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            animationJob?.cancel()
+        }
+    }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -213,7 +259,6 @@ fun YandexMapWithLocationMarker(
             )
         }
     }
-
 
     LaunchedEffect(Unit) {
         if (ActivityCompat.checkSelfPermission(
@@ -235,7 +280,6 @@ fun YandexMapWithLocationMarker(
                 }
             )
 
-            // Используем последнее известное местоположение, если оно доступно
             locationHelper.getLastKnownLocation { point ->
                 point?.let {
                     viewModel.updateLocation(it)
@@ -259,7 +303,7 @@ fun YandexMapWithLocationMarker(
             }
         )
 
-        // Прозрачный Box для обработки жестов у левого края экрана
+        // Жесты слева
         Box(
             modifier = Modifier
                 .fillMaxHeight()
@@ -276,7 +320,7 @@ fun YandexMapWithLocationMarker(
                 }
         )
 
-        // Прозрачный Box для обработки жестов у правого края экрана
+        // Жесты справа
         Box(
             modifier = Modifier
                 .fillMaxHeight()

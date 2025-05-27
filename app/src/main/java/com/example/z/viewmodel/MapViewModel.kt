@@ -16,7 +16,6 @@ class MapViewModel : ViewModel() {
     private val _friends = MutableStateFlow<List<FriendModel>>(emptyList())
     val friends = _friends.asStateFlow()
 
-    // Обновление местоположения
     fun updateLocation(point: Point) {
         viewModelScope.launch {
             _currentLocation.value = point

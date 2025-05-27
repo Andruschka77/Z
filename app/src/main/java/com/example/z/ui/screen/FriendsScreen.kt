@@ -1,6 +1,5 @@
 package com.example.z.ui.screen
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,7 +23,6 @@ import com.example.z.model.FriendModel
 import com.example.z.model.requests.FriendRequest
 import com.example.z.utils.TokenManager
 import com.example.z.viewmodel.FriendsViewModel
-import kotlin.collections.isNotEmpty
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

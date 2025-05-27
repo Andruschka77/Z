@@ -19,7 +19,10 @@ import com.yandex.mapkit.MapKitFactory
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.z.viewmodel.ThemeViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -61,6 +64,7 @@ fun ZApp(
     val authViewModel: AuthViewModel = viewModel()
     val mapViewModel: MapViewModel = viewModel()
     val friendsViewModel: FriendsViewModel = viewModel()
+    var selectedFriend by remember { mutableStateOf<FriendModel?>(null) }
 
     val themeViewModel: ThemeViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
@@ -82,81 +86,74 @@ fun ZApp(
             navController = navController,
             startDestination = if (tokenManager.getToken() != null) Routes.MAP_SCREEN else Routes.AUTH_SCREEN
         ) {
-        // Авторизация
-        composable(Routes.AUTH_SCREEN) {
-            AuthScreen(
-                onRegisterClick = { navController.navigate(Routes.REGISTER_SCREEN) },
-                onLoginSuccess = { navController.navigate(Routes.MAP_SCREEN) },
-                tokenManager = tokenManager,
-                authViewModel = authViewModel
-            )
-        }
-
-        // Регистрация
-        composable(Routes.REGISTER_SCREEN) {
-            RegisterScreen(
-                onRegisterSuccess = { navController.navigate(Routes.MAP_SCREEN) },
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-
-        // Главный экран с картой
-        composable(Routes.MAP_SCREEN) {
-            YandexMapWithLocationMarker(
-                viewModel = mapViewModel,
-                onSettingsClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
-                onProfileClick = { navController.navigate(Routes.PROFILE_SCREEN) },
-                onFriendsClick = { navController.navigate(Routes.FRIENDS_SCREEN) },
-            )
-        }
-
-        // Профиль пользователя
-        composable(Routes.PROFILE_SCREEN) {
-            LaunchedEffect(Unit) {
-                tokenManager.getToken()?.let { authViewModel.loadProfileData(it) }
+            composable(Routes.AUTH_SCREEN) {
+                AuthScreen(
+                    onRegisterClick = { navController.navigate(Routes.REGISTER_SCREEN) },
+                    onLoginSuccess = { navController.navigate(Routes.MAP_SCREEN) },
+                    tokenManager = tokenManager,
+                    authViewModel = authViewModel
+                )
             }
 
-            ProfileScreen(
-                onBackClick = { navController.popBackStack() },
-                onLogoutClick = {
-                    authViewModel.logout(tokenManager)
-                    navController.navigate(Routes.AUTH_SCREEN) {
-                        popUpTo(Routes.MAP_SCREEN) { inclusive = true }
-                    }
-                },
-                profileData = authViewModel.profileData.value
-            )
-        }
-
-        // Список друзей
-        composable(Routes.FRIENDS_SCREEN) {
-            LaunchedEffect(Unit) {
-                tokenManager.getToken()?.let { friendsViewModel.loadFriends(it) }
+            composable(Routes.REGISTER_SCREEN) {
+                RegisterScreen(
+                    onRegisterSuccess = { navController.navigate(Routes.MAP_SCREEN) },
+                    onBackClick = { navController.popBackStack() }
+                )
             }
 
-            FriendsScreen(
-                onBackClick = { navController.popBackStack() },
-                onFriendClick = { friend ->
-                    navController.currentBackStackEntry?.savedStateHandle?.set("friend", friend)
-                    navController.navigate("${Routes.FRIEND_PROFILE_SCREEN}/${friend.id}")
-                },
-                viewModel = friendsViewModel
-            )
-        }
+            composable(Routes.MAP_SCREEN) {
+                YandexMapWithLocationMarker(
+                    viewModel = mapViewModel,
+                    onSettingsClick = { navController.navigate(Routes.SETTINGS_SCREEN) },
+                    onProfileClick = { navController.navigate(Routes.PROFILE_SCREEN) },
+                    onFriendsClick = { navController.navigate(Routes.FRIENDS_SCREEN) }
+                )
+            }
 
-        // Профиль друга
-        composable("${Routes.FRIEND_PROFILE_SCREEN}/{friendId}") { backStackEntry ->
-            val friendId = backStackEntry.arguments?.getString("friendId")
-            val friend = friendsViewModel.friends.find { it.id == friendId }
-                ?: return@composable
+            composable(Routes.PROFILE_SCREEN) {
+                LaunchedEffect(Unit) {
+                    tokenManager.getToken()?.let { authViewModel.loadProfileData(it) }
+                }
 
-            FriendProfileScreen(
-                friend = friend,
-                onBackClick = { navController.popBackStack() }
-            )
-        }
+                ProfileScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onLogoutClick = {
+                        authViewModel.logout(tokenManager)
+                        navController.navigate(Routes.AUTH_SCREEN) {
+                            popUpTo(Routes.MAP_SCREEN) { inclusive = true }
+                        }
+                    },
+                    profileData = authViewModel.profileData.value
+                )
+            }
 
-        // Настройки
+            composable(Routes.FRIENDS_SCREEN) {
+                LaunchedEffect(Unit) {
+                    tokenManager.getToken()?.let { friendsViewModel.loadFriends(it) }
+                }
+
+                FriendsScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onFriendClick = { friend ->
+                        navController.currentBackStackEntry?.savedStateHandle?.set("friend", friend)
+                        navController.navigate("${Routes.FRIEND_PROFILE_SCREEN}/${friend.id}")
+                    },
+                    viewModel = friendsViewModel
+                )
+            }
+
+            composable("${Routes.FRIEND_PROFILE_SCREEN}/{friendId}") { backStackEntry ->
+                val friendId = backStackEntry.arguments?.getString("friendId")
+                val friend = friendsViewModel.friends.find { it.id == friendId }
+                    ?: return@composable
+
+                FriendProfileScreen(
+                    friend = friend,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
             composable(Routes.SETTINGS_SCREEN) {
                 SettingsScreen(
                     onBackClick = { navController.popBackStack() },

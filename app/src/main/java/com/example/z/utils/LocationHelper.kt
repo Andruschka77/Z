@@ -16,24 +16,21 @@ class LocationHelper(private val context: Context) {
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
-    // Функция для начала обновления местоположения
     fun startLocationUpdates(
         onLocationReceived: (Point) -> Unit,
         onPermissionDenied: () -> Unit,
-        interval: Long = 1000L, // Интервал обновления (1 секунда)
-        fastestInterval: Long = 500L // Минимальный интервал (500 мс)
+        interval: Long = 10000L,
+        fastestInterval: Long = 500L
     ) {
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // Запрашиваем разрешение, если оно не предоставлено
             onPermissionDenied()
             return
         }
 
-        // Создаем LocationRequest с минимальными интервалами
         val locationRequest = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
             interval
@@ -41,7 +38,6 @@ class LocationHelper(private val context: Context) {
             setMinUpdateIntervalMillis(fastestInterval)
         }.build()
 
-        // Создаем LocationCallback
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
@@ -50,11 +46,9 @@ class LocationHelper(private val context: Context) {
             }
         }
 
-        // Запрашиваем обновления местоположения
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
     }
 
-    // Функция для получения последнего известного местоположения
     fun getLastKnownLocation(onLocationReceived: (Point?) -> Unit) {
         if (ActivityCompat.checkSelfPermission(
                 context,
